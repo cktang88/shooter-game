@@ -122,7 +122,8 @@ export class Game extends Scene {
                 -this.WORLD_SIZE / 2,
                 this.WORLD_SIZE,
                 this.WORLD_SIZE
-            );
+            )
+            .setName("minimap");
 
         // Create border for minimap
         this.minimapBorder = this.add
@@ -137,19 +138,28 @@ export class Game extends Scene {
             .setScrollFactor(0)
             .setDepth(100);
 
-        // Create player indicator for minimap
-        const playerIndicator = this.add
-            .graphics()
-            .lineStyle(2, 0x00ff00)
-            .fillStyle(0x00ff00)
-            .fillCircle(0, 0, 6)
-            .setDepth(1);
-
-        // Make the player indicator follow the player in world space
-        playerIndicator.setScrollFactor(1);
-
         // Make minimap ignore UI elements
         this.minimap.ignore([this.minimapBorder, this.ammoText]);
+
+        // Create a graphics object for the player dot
+        const playerDot = this.add
+            .graphics({ x: 0, y: 0 })
+            .fillStyle(0x00ff00)
+            .fillCircle(0, 0, 80)
+            .setDepth(1);
+
+        // Make main camera ignore the player dot
+        this.cameras.main.ignore(playerDot);
+
+        // Update player dot position in the game loop
+        this.events.on("update", () => {
+            if (this.player?.gameObject) {
+                playerDot.setPosition(
+                    this.player.gameObject.x,
+                    this.player.gameObject.y
+                );
+            }
+        });
     }
 
     private createRandomWalls() {
