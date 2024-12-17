@@ -250,7 +250,7 @@ export class UIComponent extends Component {
 export class StaminaComponent extends Component {
     public currentStamina: number;
     public readonly maxStamina: number = 100;
-    public readonly staminaDrain: number = 20; // Points per second while sprinting
+    public readonly staminaDrain: number = 50; // Points per second while sprinting
     public readonly staminaRegen: number = 10; // Points per second while not sprinting
     public readonly sprintThreshold: number = 0; // Minimum stamina needed to start sprinting
 
