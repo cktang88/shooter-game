@@ -14,76 +14,36 @@ import {
 import { BulletSourceComponent } from "../components/Component";
 
 export class BulletCollisionSystem extends System {
-    private collisionGroups: Map<string, Phaser.GameObjects.GameObject[]> =
-        new Map();
-
     constructor(scene: Scene) {
         super(scene);
-        this.setupCollisionGroups();
-    }
-
-    private setupCollisionGroups() {
-        this.collisionGroups.clear();
-        this.collisionGroups.set("bullet", []);
-        this.collisionGroups.set("enemy", []);
-        this.collisionGroups.set("wall", []);
-        this.collisionGroups.set("player", []);
     }
 
     canProcessEntity(entity: Entity): boolean {
-        return (
-            entity.hasComponent(ColliderComponent) &&
-            entity.hasComponent(PhysicsBodyComponent)
-        );
+        return entity.hasComponent(ColliderComponent);
     }
 
     update(time: number, delta: number): void {
-        // Reset collision groups
-        this.setupCollisionGroups();
-
-        // Sort entities into collision groups
-        this.entities.forEach((entity) => {
-            const collider = entity.getComponent(ColliderComponent);
-            if (!collider) return;
-
-            const group = this.collisionGroups.get(collider.group);
-            if (group) {
-                group.push(entity.gameObject);
-            }
-        });
-
-        const bullets = this.collisionGroups.get("bullet") || [];
-        const enemies = this.collisionGroups.get("enemy") || [];
-        const walls = this.collisionGroups.get("wall") || [];
-        const players = this.collisionGroups.get("player") || [];
-
-        // Handle bullet collisions with walls
-        bullets.forEach((bullet) => {
-            walls.forEach((wall) => {
-                this.scene.physics.add.overlap(
-                    bullet,
-                    wall,
-                    () => this.handleBulletCollision(bullet),
-                    undefined,
-                    this
-                );
-            });
-        });
+        const bullets = Array.from(this.entities).filter((entity) =>
+            entity.hasComponent(BulletSourceComponent)
+        );
+        const enemies = Array.from(this.entities).filter((entity) =>
+            entity.hasComponent(EnemyComponent)
+        );
+        const players = Array.from(this.entities).filter((entity) =>
+            entity.hasComponent(PlayerControlledComponent)
+        );
 
         // Handle bullet collisions with enemies
         bullets.forEach((bullet) => {
-            const bulletEntity = this.findEntityByGameObject(bullet);
-            const bulletSource = bulletEntity?.getComponent(
-                BulletSourceComponent
-            );
-            const isPlayerBullet = bulletSource?.isPlayerBullet;
+            const bulletSource = bullet.getComponent(BulletSourceComponent);
+            const isPlayerBullet = bulletSource && bulletSource.isPlayerBullet;
 
             enemies.forEach((enemy) => {
                 // Only player bullets can damage enemies
                 if (isPlayerBullet) {
                     this.scene.physics.add.overlap(
-                        bullet,
-                        enemy,
+                        bullet.gameObject,
+                        enemy.gameObject,
                         () => this.handleBulletHit(bullet, enemy),
                         undefined,
                         this
@@ -94,18 +54,15 @@ export class BulletCollisionSystem extends System {
 
         // Handle bullet collisions with player
         bullets.forEach((bullet) => {
-            const bulletEntity = this.findEntityByGameObject(bullet);
-            const bulletSource = bulletEntity?.getComponent(
-                BulletSourceComponent
-            );
+            const bulletSource = bullet.getComponent(BulletSourceComponent);
             const isEnemyBullet = bulletSource && !bulletSource.isPlayerBullet;
 
             players.forEach((player) => {
                 // Only enemy bullets can damage player
                 if (isEnemyBullet) {
                     this.scene.physics.add.overlap(
-                        bullet,
-                        player,
+                        bullet.gameObject,
+                        player.gameObject,
                         () => this.handleBulletHit(bullet, player),
                         undefined,
                         this
@@ -115,20 +72,21 @@ export class BulletCollisionSystem extends System {
         });
     }
 
-    private handleBulletCollision(bulletObj: Phaser.GameObjects.GameObject) {
-        const bulletEntity = this.findEntityByGameObject(bulletObj);
-        if (bulletEntity) {
-            bulletEntity.destroy();
-        }
+    private createExplosion(x: number, y: number): void {
+        // Create explosion effect
+        const explosion = this.scene.add.circle(x, y, 10, 0xffff00, 0.8);
+
+        // Fade out and destroy explosion
+        this.scene.tweens.add({
+            targets: explosion,
+            alpha: 0,
+            scale: 1.5,
+            duration: 200,
+            onComplete: () => explosion.destroy(),
+        });
     }
 
-    private handleBulletHit(
-        bulletObj: Phaser.GameObjects.GameObject,
-        targetObj: Phaser.GameObjects.GameObject
-    ) {
-        const bulletEntity = this.findEntityByGameObject(bulletObj);
-        const targetEntity = this.findEntityByGameObject(targetObj);
-
+    private handleBulletHit(bulletEntity: Entity, targetEntity: Entity) {
         if (!bulletEntity || !targetEntity) return;
 
         // Get damage amount from bullet
@@ -139,10 +97,17 @@ export class BulletCollisionSystem extends System {
             targetHealth.health -= damageComponent.damage;
             console.log(`Hit! Health remaining: ${targetHealth.health}`);
 
+            // Create explosion at bullet position
+            const bulletObj =
+                bulletEntity.gameObject as Phaser.GameObjects.GameObject;
+            this.createExplosion(bulletObj.x, bulletObj.y);
+
             // Handle death
             if (targetHealth.health <= 0) {
                 if (targetEntity.hasComponent(EnemyComponent)) {
                     console.log("Enemy destroyed!");
+                    // Remove enemy from all systems before destroying
+                    this.scene.events.emit("enemy-destroyed", targetEntity);
                     targetEntity.destroy();
                 } else if (
                     targetEntity.hasComponent(PlayerControlledComponent)
@@ -155,14 +120,6 @@ export class BulletCollisionSystem extends System {
 
         // Destroy bullet after hit
         bulletEntity.destroy();
-    }
-
-    private findEntityByGameObject(
-        gameObject: Phaser.GameObjects.GameObject
-    ): Entity | undefined {
-        return Array.from(this.entities).find(
-            (entity) => entity.gameObject === gameObject
-        );
     }
 }
 

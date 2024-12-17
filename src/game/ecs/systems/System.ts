@@ -234,6 +234,7 @@ export class CollisionSystem extends System {
         this.collisionGroups.set("wall", []);
         this.collisionGroups.set("bullet", []);
         this.collisionGroups.set("player", []);
+        this.collisionGroups.set("enemy", []);
     }
 
     update(time: number, delta: number): void {
@@ -259,6 +260,7 @@ export class CollisionSystem extends System {
         const bullets = this.collisionGroups.get("bullet") || [];
         const walls = this.collisionGroups.get("wall") || [];
         const players = this.collisionGroups.get("player") || [];
+        const enemies = this.collisionGroups.get("enemy") || [];
 
         // Bullet-Wall collisions
         if (bullets.length > 0 && walls.length > 0) {
@@ -281,19 +283,43 @@ export class CollisionSystem extends System {
             const collider = this.scene.physics.add.collider(players, walls);
             this.colliders.push(collider);
         }
+
+        // Enemy-Wall collisions
+        if (enemies.length > 0 && walls.length > 0) {
+            const collider = this.scene.physics.add.collider(enemies, walls);
+            this.colliders.push(collider);
+        }
+
+        // Enemy-Player collisions
+        if (enemies.length > 0 && players.length > 0) {
+            const collider = this.scene.physics.add.collider(enemies, players);
+            this.colliders.push(collider);
+        }
     }
 
     private handleBulletWallCollision(
         bulletObj: Phaser.GameObjects.GameObject,
         wallObj: Phaser.GameObjects.GameObject
     ) {
-        console.log(
-            "Bullet-Wall collision detected, positions: ",
-            bulletObj.x,
-            bulletObj.y,
-            wallObj.x,
-            wallObj.y
+        // Create explosion effect
+        const sprite = bulletObj as Phaser.GameObjects.Sprite;
+        const explosion = this.scene.add.circle(
+            sprite.x,
+            sprite.y,
+            10,
+            0xffff00,
+            0.8
         );
+
+        // Fade out and destroy explosion
+        this.scene.tweens.add({
+            targets: explosion,
+            alpha: 0,
+            scale: 1.5,
+            duration: 200,
+            onComplete: () => explosion.destroy(),
+        });
+
         // Find and destroy the bullet entity
         this.entities.forEach((entity) => {
             if (entity.gameObject === bulletObj) {

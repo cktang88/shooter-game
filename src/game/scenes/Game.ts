@@ -103,6 +103,18 @@ export class Game extends Scene {
             this.systems.forEach((system) => system.addEntity(bullet));
         });
 
+        // Listen for enemy destruction
+        this.events.on("enemy-destroyed", (enemy: Entity) => {
+            // Remove from enemies array
+            const index = this.enemies.findIndex((e) => e === enemy);
+            if (index !== -1) {
+                this.enemies.splice(index, 1);
+            }
+
+            // Remove from all systems
+            this.systems.forEach((system) => system.removeEntity(enemy));
+        });
+
         EventBus.emit("current-scene-ready", this);
     }
 
