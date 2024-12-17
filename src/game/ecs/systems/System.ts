@@ -151,11 +151,15 @@ export class WeaponSystem extends System {
             if (!physicsBody) return;
 
             const pointer = this.scene.input.activePointer;
+            const worldPoint = this.scene.cameras.main.getWorldPoint(
+                pointer.x,
+                pointer.y
+            );
             const angle = Phaser.Math.Angle.Between(
                 physicsBody.body.x,
                 physicsBody.body.y,
-                pointer.x + this.scene.cameras.main.scrollX,
-                pointer.y + this.scene.cameras.main.scrollY
+                worldPoint.x,
+                worldPoint.y
             );
 
             // Create bullet
@@ -163,7 +167,10 @@ export class WeaponSystem extends System {
                 this.scene,
                 physicsBody.body.x,
                 physicsBody.body.y,
-                angle
+                angle,
+                2000,
+                10,
+                entity.hasComponent(PlayerControlledComponent)
             );
 
             weapon.currentAmmo--;

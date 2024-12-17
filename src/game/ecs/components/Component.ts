@@ -75,3 +75,13 @@ export class EnemyComponent extends Component {
     }
 }
 
+// Component to identify bullet source
+export class BulletSourceComponent extends Component {
+    constructor(
+        entity: Phaser.GameObjects.GameObject,
+        public isPlayerBullet: boolean
+    ) {
+        super(entity);
+    }
+}
+

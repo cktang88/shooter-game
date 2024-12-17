@@ -4,8 +4,8 @@ import {
     PhysicsBodyComponent,
     ColliderComponent,
     DamageComponent,
+    BulletSourceComponent,
 } from "../components/Component";
-
 export class Bullet extends Entity {
     constructor(
         scene: Scene,
@@ -13,12 +13,13 @@ export class Bullet extends Entity {
         y: number,
         angle: number,
         speed: number = 2000,
-        damage: number = 10
+        damage: number = 10,
+        isPlayerBullet: boolean = false
     ) {
         super(scene);
 
         // Create the bullet sprite instead of line for better physics
-        this.gameObject = scene.add.rectangle(x, y, 20, 4, 0xffff00);
+        this.gameObject = scene.add.rectangle(x, y, 30, 4, 0xffffff);
 
         // Enable physics
         scene.physics.add.existing(this.gameObject);
@@ -29,14 +30,19 @@ export class Bullet extends Entity {
                 new ColliderComponent(this.gameObject, "bullet", [
                     "wall",
                     "enemy",
+                    "player",
                 ])
             )
-            .addComponent(new DamageComponent(this.gameObject, damage));
+            .addComponent(new DamageComponent(this.gameObject, damage))
+            .addComponent(
+                new BulletSourceComponent(this.gameObject, isPlayerBullet)
+            );
 
         // Set up physics body
         const body = this.gameObject.body as Phaser.Physics.Arcade.Body;
 
         // Configure physics body
+        body.setCircle(4); // Half of the rectangle size for circular collision
         body.setAllowGravity(false);
         body.setFriction(0, 0);
         body.setBounce(0);
@@ -51,6 +57,9 @@ export class Bullet extends Entity {
         );
         body.setVelocity(velocity.x, velocity.y);
 
+        // Emit bullet created event
+        scene.events.emit("bullet-created", this);
+
         // Destroy bullet after 1 second
         scene.time.delayedCall(1000, () => {
             this.destroy();
@@ -61,4 +70,6 @@ export class Bullet extends Entity {
         this.destroy();
     }
 }
+
+export { BulletSourceComponent };
 

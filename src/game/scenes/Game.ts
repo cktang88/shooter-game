@@ -71,13 +71,16 @@ export class Game extends Scene {
         this.enemySystem = new EnemySystem(this);
         this.enemySystem.setPlayer(this.player);
 
+        // Create bullet collision system first
+        const bulletCollisionSystem = new BulletCollisionSystem(this);
+
         // Initialize systems
         this.systems = [
             new PlayerControlSystem(this),
             new WeaponSystem(this),
             new CollisionSystem(this),
             this.enemySystem,
-            new BulletCollisionSystem(this),
+            bulletCollisionSystem,
         ];
 
         // Add player to systems
@@ -92,6 +95,11 @@ export class Game extends Scene {
 
         // Create UI elements
         this.setupUI();
+
+        // Listen for bullet creation
+        this.events.on("bullet-created", (bullet: Entity) => {
+            this.systems.forEach((system) => system.addEntity(bullet));
+        });
 
         EventBus.emit("current-scene-ready", this);
     }

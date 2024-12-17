@@ -25,7 +25,12 @@ export class Wall extends Entity {
         this.addComponent(
             new PhysicsBodyComponent(this.gameObject)
         ).addComponent(
-            new ColliderComponent(this.gameObject, "wall", ["player", "bullet"])
+            new ColliderComponent(this.gameObject, "wall", [
+                "player",
+                "bullet",
+                "enemy",
+            ])
         );
     }
 }
+
