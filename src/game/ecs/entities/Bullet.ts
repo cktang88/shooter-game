@@ -16,12 +16,13 @@ export class Bullet extends Entity {
         angle: number,
         speed: number = BULLET_SPEED,
         damage: number = 10,
-        isPlayerBullet: boolean = false
+        isPlayerBullet: boolean = false,
+        color: number = 0xffff00
     ) {
         super(scene);
 
-        // Create the bullet sprite instead of line for better physics
-        this.gameObject = scene.add.rectangle(x, y, 60, 4, 0xffff00);
+        // Create the bullet sprite with the specified color
+        this.gameObject = scene.add.rectangle(x, y, 60, 4, color);
 
         // Enable physics
         scene.physics.add.existing(this.gameObject);

@@ -8,6 +8,7 @@ import {
     EnemyComponent,
     UIComponent,
 } from "../components/Component";
+import { ENEMY_WEAPON } from "../components/WeaponTypes";
 
 export class Enemy extends Entity {
     constructor(scene: Scene, x: number, y: number) {
@@ -55,17 +56,7 @@ export class Enemy extends Entity {
                 ])
             )
             .addComponent(new HealthComponent(this.gameObject, 100, 100))
-            .addComponent(
-                new WeaponComponent(
-                    this.gameObject,
-                    1000, // slower fire rate than player
-                    0,
-                    Infinity, // infinite ammo
-                    Infinity,
-                    0, // no reload needed
-                    false
-                )
-            )
+            .addComponent(new WeaponComponent(this.gameObject, [ENEMY_WEAPON]))
             .addComponent(new UIComponent(this.gameObject));
 
         // Set up physics body

@@ -1,3 +1,5 @@
+import { WeaponConfig, WEAPON_TYPES } from "./WeaponTypes";
+
 export abstract class Component {
     constructor(public readonly entity: Phaser.GameObjects.GameObject) {}
 }
@@ -48,16 +50,50 @@ export class VelocityComponent extends Component {
 
 // Weapon components
 export class WeaponComponent extends Component {
+    public currentWeaponIndex: number = 0;
+    public weapons: WeaponConfig[] = [];
+    public currentAmmo: number;
+    public isReloading: boolean = false;
+    public lastFired: number = 0;
+
     constructor(
         entity: Phaser.GameObjects.GameObject,
-        public fireRate: number,
-        public lastFired: number = 0,
-        public currentAmmo: number,
-        public maxAmmo: number,
-        public reloadTime: number,
-        public isReloading: boolean = false
+        weaponConfigs: WeaponConfig[] = [WEAPON_TYPES.PISTOL]
     ) {
         super(entity);
+        this.weapons = weaponConfigs;
+        this.currentAmmo = this.getCurrentWeapon().clipSize;
+    }
+
+    getCurrentWeapon(): WeaponConfig {
+        return this.weapons[this.currentWeaponIndex];
+    }
+
+    switchToNextWeapon(): void {
+        if (this.isReloading) return; // Don't switch while reloading
+        this.currentWeaponIndex =
+            (this.currentWeaponIndex + 1) % this.weapons.length;
+        this.currentAmmo = this.getCurrentWeapon().clipSize;
+    }
+
+    switchToPreviousWeapon(): void {
+        if (this.isReloading) return; // Don't switch while reloading
+        this.currentWeaponIndex =
+            (this.currentWeaponIndex - 1 + this.weapons.length) %
+            this.weapons.length;
+        this.currentAmmo = this.getCurrentWeapon().clipSize;
+    }
+
+    get fireRate(): number {
+        return this.getCurrentWeapon().fireRate;
+    }
+
+    get maxAmmo(): number {
+        return this.getCurrentWeapon().clipSize;
+    }
+
+    get reloadTime(): number {
+        return this.getCurrentWeapon().reloadTime;
     }
 }
 

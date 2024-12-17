@@ -168,10 +168,12 @@ export class WeaponSystem extends System {
         weapon: WeaponComponent,
         time: number
     ): void {
+        const currentWeapon = weapon.getCurrentWeapon();
+
         if (
             !weapon.isReloading &&
             weapon.currentAmmo > 0 &&
-            time > weapon.lastFired + weapon.fireRate
+            time > weapon.lastFired + currentWeapon.fireRate
         ) {
             const physicsBody = entity.getComponent(PhysicsBodyComponent);
             if (!physicsBody) return;
@@ -181,23 +183,31 @@ export class WeaponSystem extends System {
                 pointer.x,
                 pointer.y
             );
-            const angle = Phaser.Math.Angle.Between(
+            const baseAngle = Phaser.Math.Angle.Between(
                 physicsBody.body.x,
                 physicsBody.body.y,
                 worldPoint.x,
                 worldPoint.y
             );
 
-            // Create bullet
-            new Bullet(
-                this.scene,
-                physicsBody.body.x,
-                physicsBody.body.y,
-                angle,
-                2000,
-                10,
-                entity.hasComponent(PlayerControlledComponent)
-            );
+            // Create multiple bullets for weapons like shotgun
+            for (let i = 0; i < currentWeapon.bulletsPerShot; i++) {
+                // Add spread to the angle
+                const spreadAngle =
+                    baseAngle + (Math.random() - 0.5) * currentWeapon.spread;
+
+                // Create bullet with weapon-specific properties
+                new Bullet(
+                    this.scene,
+                    physicsBody.body.x,
+                    physicsBody.body.y,
+                    spreadAngle,
+                    currentWeapon.bulletSpeed,
+                    currentWeapon.bulletDamage,
+                    entity.hasComponent(PlayerControlledComponent),
+                    currentWeapon.bulletColor
+                );
+            }
 
             weapon.currentAmmo--;
             weapon.lastFired = time;

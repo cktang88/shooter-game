@@ -278,9 +278,10 @@ export class Game extends Scene {
     private updateAmmoDisplay() {
         const weaponComponent = this.player.getComponent(WeaponComponent);
         if (weaponComponent) {
+            const currentWeapon = weaponComponent.getCurrentWeapon();
             const text = weaponComponent.isReloading
-                ? "Reloading..."
-                : `Ammo: ${weaponComponent.currentAmmo}/${weaponComponent.maxAmmo}`;
+                ? `${currentWeapon.name} - Reloading...`
+                : `${currentWeapon.name} - Ammo: ${weaponComponent.currentAmmo}/${weaponComponent.maxAmmo}`;
             this.ammoText.setText(text);
         }
     }
