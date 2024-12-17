@@ -114,10 +114,21 @@ export class EnemyComponent extends Component {
 // Component to identify bullet source
 export class BulletSourceComponent extends Component {
     constructor(
-        entity: Phaser.GameObjects.GameObject,
+        gameObject: Phaser.GameObjects.GameObject,
         public isPlayerBullet: boolean
     ) {
-        super(entity);
+        super(gameObject);
+    }
+}
+
+export class BulletRangeComponent extends Component {
+    constructor(
+        gameObject: Phaser.GameObjects.GameObject,
+        public startX: number,
+        public startY: number,
+        public weaponConfig: WeaponConfig
+    ) {
+        super(gameObject);
     }
 }
 

@@ -202,10 +202,8 @@ export class WeaponSystem extends System {
                     physicsBody.body.x,
                     physicsBody.body.y,
                     spreadAngle,
-                    currentWeapon.bulletSpeed,
-                    currentWeapon.bulletDamage,
-                    entity.hasComponent(PlayerControlledComponent),
-                    currentWeapon.bulletColor
+                    currentWeapon,
+                    entity.hasComponent(PlayerControlledComponent)
                 );
             }
 

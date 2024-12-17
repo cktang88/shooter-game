@@ -9,6 +9,7 @@ import {
     EnemyComponent,
     PlayerControlledComponent,
     UIComponent,
+    BulletRangeComponent,
 } from "../components/Component";
 
 // Import BulletSourceComponent from Bullet.ts
@@ -87,6 +88,43 @@ export class BulletCollisionSystem extends System {
         });
     }
 
+    private calculateDamageWithFalloff(
+        bulletEntity: Entity,
+        damageComponent: DamageComponent
+    ): number {
+        const rangeComponent = bulletEntity.getComponent(BulletRangeComponent);
+        if (!rangeComponent) return damageComponent.damage;
+
+        const bulletObj =
+            bulletEntity.gameObject as Phaser.GameObjects.GameObject;
+        const distance = Phaser.Math.Distance.Between(
+            rangeComponent.startX,
+            rangeComponent.startY,
+            bulletObj.x,
+            bulletObj.y
+        );
+
+        const { range, falloffStart, bulletDamage, minDamage } =
+            rangeComponent.weaponConfig;
+
+        // If within falloffStart distance, do full damage
+        if (distance <= falloffStart) {
+            return bulletDamage;
+        }
+
+        // If beyond maximum range, do minimum damage
+        if (distance >= range) {
+            return minDamage;
+        }
+
+        // Linear interpolation between falloffStart and range
+        const falloffRange = range - falloffStart;
+        const distanceInFalloff = distance - falloffStart;
+        const falloffPercent = distanceInFalloff / falloffRange;
+
+        return bulletDamage - (bulletDamage - minDamage) * falloffPercent;
+    }
+
     private handleBulletHit(bulletEntity: Entity, targetEntity: Entity) {
         if (!bulletEntity || !targetEntity) return;
 
@@ -95,8 +133,17 @@ export class BulletCollisionSystem extends System {
         const targetHealth = targetEntity.getComponent(HealthComponent);
 
         if (damageComponent && targetHealth) {
-            targetHealth.health -= damageComponent.damage;
-            console.log(`Hit! Health remaining: ${targetHealth.health}`);
+            // Calculate damage with falloff
+            const finalDamage = this.calculateDamageWithFalloff(
+                bulletEntity,
+                damageComponent
+            );
+            targetHealth.health -= finalDamage;
+            console.log(
+                `Hit! Damage: ${finalDamage.toFixed(1)}, Health remaining: ${
+                    targetHealth.health
+                }`
+            );
 
             // Create explosion at bullet position
             const bulletObj =

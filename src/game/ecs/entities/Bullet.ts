@@ -5,24 +5,29 @@ import {
     ColliderComponent,
     DamageComponent,
     BulletSourceComponent,
+    BulletRangeComponent,
 } from "../components/Component";
+import { WeaponConfig } from "../components/WeaponTypes";
 
-const BULLET_SPEED = 3000;
 export class Bullet extends Entity {
     constructor(
         scene: Scene,
         x: number,
         y: number,
         angle: number,
-        speed: number = BULLET_SPEED,
-        damage: number = 10,
-        isPlayerBullet: boolean = false,
-        color: number = 0xffff00
+        weaponConfig: WeaponConfig,
+        isPlayerBullet: boolean = false
     ) {
         super(scene);
 
         // Create the bullet sprite with the specified color
-        this.gameObject = scene.add.rectangle(x, y, 60, 4, color);
+        this.gameObject = scene.add.rectangle(
+            x,
+            y,
+            60,
+            4,
+            weaponConfig.bulletColor
+        );
 
         // Enable physics
         scene.physics.add.existing(this.gameObject);
@@ -36,9 +41,14 @@ export class Bullet extends Entity {
                     "player",
                 ])
             )
-            .addComponent(new DamageComponent(this.gameObject, damage))
+            .addComponent(
+                new DamageComponent(this.gameObject, weaponConfig.bulletDamage)
+            )
             .addComponent(
                 new BulletSourceComponent(this.gameObject, isPlayerBullet)
+            )
+            .addComponent(
+                new BulletRangeComponent(this.gameObject, x, y, weaponConfig)
             );
 
         // Set up physics body
@@ -56,15 +66,17 @@ export class Bullet extends Entity {
         // Set velocity based on angle
         const velocity = scene.physics.velocityFromAngle(
             Phaser.Math.RadToDeg(angle),
-            speed
+            weaponConfig.bulletSpeed
         );
         body.setVelocity(velocity.x, velocity.y);
 
         // Emit bullet created event
         scene.events.emit("bullet-created", this);
 
-        // Destroy bullet after 1 second
-        scene.time.delayedCall(1000, () => {
+        // Destroy bullet after maximum range time
+        const maxRangeTime =
+            (weaponConfig.range / weaponConfig.bulletSpeed) * 1000;
+        scene.time.delayedCall(maxRangeTime, () => {
             this.destroy();
         });
     }

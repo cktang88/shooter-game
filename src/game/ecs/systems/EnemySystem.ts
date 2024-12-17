@@ -8,12 +8,12 @@ import {
     HealthComponent,
     EnemyComponent,
 } from "../components/Component";
+import { ENEMY_WEAPON } from "../components/WeaponTypes";
 
 export class EnemySystem extends System {
     private player: Entity | null = null;
     private readonly SIGHT_RANGE = 1200;
     private readonly MOVEMENT_SPEED = 150;
-    private readonly BULLET_SPEED = 3000; // Match this with your bullet speed
     private readonly AIM_RANDOMNESS = 100; // Pixels of random deviation
 
     constructor(scene: Scene) {
@@ -42,7 +42,7 @@ export class EnemySystem extends System {
         );
 
         // Calculate time bullet will take to reach the player
-        const bulletTravelTime = distanceToPlayer / this.BULLET_SPEED;
+        const bulletTravelTime = distanceToPlayer / ENEMY_WEAPON.speed;
 
         // Predict where player will be
         const predictedX = playerPos.x + playerVelocity.x * bulletTravelTime;
@@ -125,14 +125,13 @@ export class EnemySystem extends System {
                 enemyPhysics.body.setVelocity(velocity.x, velocity.y);
 
                 // Try to shoot at predicted position
-                if (time > enemyWeapon.lastFired + enemyWeapon.fireRate) {
+                if (time > enemyWeapon.lastFired + ENEMY_WEAPON.fireRate) {
                     new Bullet(
                         this.scene,
                         enemyPos.x,
                         enemyPos.y,
                         angle,
-                        this.BULLET_SPEED,
-                        10,
+                        ENEMY_WEAPON,
                         false
                     );
                     enemyWeapon.lastFired = time;
