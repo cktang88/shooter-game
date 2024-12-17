@@ -6,20 +6,22 @@ import {
     DamageComponent,
     BulletSourceComponent,
 } from "../components/Component";
+
+const BULLET_SPEED = 3000;
 export class Bullet extends Entity {
     constructor(
         scene: Scene,
         x: number,
         y: number,
         angle: number,
-        speed: number = 2000,
+        speed: number = BULLET_SPEED,
         damage: number = 10,
         isPlayerBullet: boolean = false
     ) {
         super(scene);
 
         // Create the bullet sprite instead of line for better physics
-        this.gameObject = scene.add.rectangle(x, y, 40, 4, 0xffff00);
+        this.gameObject = scene.add.rectangle(x, y, 60, 4, 0xffff00);
 
         // Enable physics
         scene.physics.add.existing(this.gameObject);

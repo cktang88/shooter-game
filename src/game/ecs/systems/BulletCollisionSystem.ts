@@ -8,6 +8,7 @@ import {
     HealthComponent,
     EnemyComponent,
     PlayerControlledComponent,
+    UIComponent,
 } from "../components/Component";
 
 // Import BulletSourceComponent from Bullet.ts
@@ -108,6 +109,11 @@ export class BulletCollisionSystem extends System {
                     console.log("Enemy destroyed!");
                     // Remove enemy from all systems before destroying
                     this.scene.events.emit("enemy-destroyed", targetEntity);
+                    // Ensure UI components are destroyed first
+                    const uiComponent = targetEntity.getComponent(UIComponent);
+                    if (uiComponent) {
+                        uiComponent.destroy();
+                    }
                     targetEntity.destroy();
                 } else if (
                     targetEntity.hasComponent(PlayerControlledComponent)

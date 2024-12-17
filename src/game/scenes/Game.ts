@@ -241,7 +241,7 @@ export class Game extends Scene {
     }
 
     private createEnemies() {
-        const numEnemies = 10;
+        const numEnemies = 30;
         const margin = 600; // Keep enemies away from spawn point
 
         for (let i = 0; i < numEnemies; i++) {
