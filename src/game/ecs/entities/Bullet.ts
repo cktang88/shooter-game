@@ -19,7 +19,7 @@ export class Bullet extends Entity {
         super(scene);
 
         // Create the bullet sprite instead of line for better physics
-        this.gameObject = scene.add.rectangle(x, y, 30, 4, 0xffffff);
+        this.gameObject = scene.add.rectangle(x, y, 40, 4, 0xffff00);
 
         // Enable physics
         scene.physics.add.existing(this.gameObject);

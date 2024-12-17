@@ -6,6 +6,7 @@ import {
     HealthComponent,
     WeaponComponent,
     EnemyComponent,
+    UIComponent,
 } from "../components/Component";
 
 export class Enemy extends Entity {
@@ -64,7 +65,8 @@ export class Enemy extends Entity {
                     0, // no reload needed
                     false
                 )
-            );
+            )
+            .addComponent(new UIComponent(this.gameObject));
 
         // Set up physics body
         const body = this.gameObject.body as Phaser.Physics.Arcade.Body;

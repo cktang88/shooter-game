@@ -9,6 +9,7 @@ import {
 } from "../ecs/systems/System";
 import { EnemySystem } from "../ecs/systems/EnemySystem";
 import { BulletCollisionSystem } from "../ecs/systems/BulletCollisionSystem";
+import { UISystem } from "../ecs/systems/UISystem";
 import { WeaponComponent } from "../ecs/components/Component";
 import { EventBus } from "../EventBus";
 
@@ -81,6 +82,7 @@ export class Game extends Scene {
             new CollisionSystem(this),
             this.enemySystem,
             bulletCollisionSystem,
+            new UISystem(this),
         ];
 
         // Add player to systems

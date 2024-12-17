@@ -119,7 +119,11 @@ export class WeaponSystem extends System {
 
             const weapon = entity.getComponent(WeaponComponent);
             if (weapon) {
-                this.tryShoot(entity, weapon, this.scene.time.now);
+                if (weapon.currentAmmo === 0 && !weapon.isReloading) {
+                    this.startReload(entity, weapon);
+                } else {
+                    this.tryShoot(entity, weapon, this.scene.time.now);
+                }
             }
         });
     }
@@ -135,6 +139,28 @@ export class WeaponSystem extends System {
                 this.startReload(entity, weapon);
             }
         });
+    }
+
+    private startReload(entity: Entity, weapon: WeaponComponent): void {
+        weapon.isReloading = true;
+        weapon.lastFired = this.scene.time.now;
+
+        // Schedule the reload completion
+        this.scene.time.delayedCall(weapon.reloadTime, () => {
+            if (weapon.isReloading) {
+                // Check if still reloading (might have been destroyed)
+                weapon.currentAmmo = weapon.maxAmmo;
+                weapon.isReloading = false;
+            }
+        });
+    }
+
+    private addScreenShake(): void {
+        const camera = this.scene.cameras.main;
+        const intensity = 5;
+        const duration = 50;
+
+        camera.shake(duration, intensity / 1000); // Intensity is in percentage (0-1)
     }
 
     private tryShoot(
@@ -175,16 +201,17 @@ export class WeaponSystem extends System {
 
             weapon.currentAmmo--;
             weapon.lastFired = time;
+
+            // Add screen shake only for player shots
+            if (entity.hasComponent(PlayerControlledComponent)) {
+                this.addScreenShake();
+            }
+
+            // Auto-reload if out of ammo
+            if (weapon.currentAmmo === 0) {
+                this.startReload(entity, weapon);
+            }
         }
-    }
-
-    private startReload(entity: Entity, weapon: WeaponComponent): void {
-        weapon.isReloading = true;
-
-        this.scene.time.delayedCall(weapon.reloadTime, () => {
-            weapon.currentAmmo = weapon.maxAmmo;
-            weapon.isReloading = false;
-        });
     }
 }
 

@@ -7,6 +7,7 @@ import {
     VelocityComponent,
     WeaponComponent,
     PlayerControlledComponent,
+    UIComponent,
 } from "../components/Component";
 
 export class Player extends Entity {
@@ -37,7 +38,8 @@ export class Player extends Entity {
                     false // isReloading
                 )
             )
-            .addComponent(new PlayerControlledComponent(this.gameObject));
+            .addComponent(new PlayerControlledComponent(this.gameObject))
+            .addComponent(new UIComponent(this.gameObject));
 
         // Set up physics body
         const body = this.gameObject.body as Phaser.Physics.Arcade.Body;

@@ -85,3 +85,62 @@ export class BulletSourceComponent extends Component {
     }
 }
 
+// UI components
+export class UIComponent extends Component {
+    healthBar: Phaser.GameObjects.Graphics;
+    reloadBar: Phaser.GameObjects.Graphics;
+
+    constructor(entity: Phaser.GameObjects.GameObject) {
+        super(entity);
+        const scene = entity.scene;
+
+        // Create health bar
+        this.healthBar = scene.add.graphics();
+
+        // Create reload bar (initially hidden)
+        this.reloadBar = scene.add.graphics();
+        this.reloadBar.visible = false;
+    }
+
+    updateHealthBar(health: number, maxHealth: number): void {
+        this.healthBar.clear();
+
+        // Draw background
+        this.healthBar.fillStyle(0x000000, 0.8);
+        this.healthBar.fillRect(-25, -40, 50, 8);
+
+        // Draw health
+        const healthPercentage = Math.max(0, health) / maxHealth;
+        this.healthBar.fillStyle(0x00ff00, 1);
+        this.healthBar.fillRect(-25, -40, 50 * healthPercentage, 8);
+    }
+
+    updateReloadBar(progress: number): void {
+        this.reloadBar.clear();
+
+        if (progress > 0) {
+            this.reloadBar.visible = true;
+
+            // Draw background
+            this.reloadBar.fillStyle(0x000000, 0.8);
+            this.reloadBar.fillRect(-25, -30, 50, 6);
+
+            // Draw progress
+            this.reloadBar.fillStyle(0xffff00, 1);
+            this.reloadBar.fillRect(-25, -30, 50 * progress, 6);
+        } else {
+            this.reloadBar.visible = false;
+        }
+    }
+
+    updatePosition(x: number, y: number): void {
+        this.healthBar.setPosition(x, y);
+        this.reloadBar.setPosition(x, y);
+    }
+
+    destroy(): void {
+        this.healthBar.destroy();
+        this.reloadBar.destroy();
+    }
+}
+
