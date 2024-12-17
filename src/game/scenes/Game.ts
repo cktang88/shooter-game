@@ -14,7 +14,12 @@ export class Game extends Scene {
     private systems: System[] = [];
     private gridTiles: Phaser.GameObjects.TileSprite;
     private ammoText: Phaser.GameObjects.Text;
-    private readonly WORLD_SIZE = 2000; // -1000 to 1000 in both directions
+    private minimap: Phaser.Cameras.Scene2D.Camera;
+    private minimapBorder: Phaser.GameObjects.Graphics;
+    private readonly WORLD_SIZE = 8000;
+    private readonly CAMERA_ZOOM = 0.8;
+    private readonly MINIMAP_SIZE = 200;
+    private walls: Wall[] = [];
 
     constructor() {
         super({
@@ -29,8 +34,9 @@ export class Game extends Scene {
     }
 
     create() {
-        // Set background color
+        // Set up cameras first
         this.cameras.main.setBackgroundColor("#1a1a1a");
+        this.cameras.main.setZoom(this.CAMERA_ZOOM);
 
         // Set up world bounds
         this.physics.world.setBounds(
@@ -41,7 +47,7 @@ export class Game extends Scene {
         );
 
         // Create grid background (fixed, not parallax)
-        const gridSize = 32;
+        const gridSize = 64;
         this.gridTiles = this.add
             .tileSprite(
                 -this.WORLD_SIZE / 2,
@@ -51,7 +57,7 @@ export class Game extends Scene {
                 "grid"
             )
             .setOrigin(0, 0)
-            .setDepth(-1); // Ensure grid is behind everything
+            .setDepth(-1);
 
         // Initialize systems
         this.systems = [
@@ -61,7 +67,7 @@ export class Game extends Scene {
         ];
 
         // Create player
-        this.player = new Player(this, 0, 0); // Start at center
+        this.player = new Player(this, 0, 0);
 
         // Add player to systems
         this.systems.forEach((system) => system.addEntity(this.player));
@@ -69,12 +75,11 @@ export class Game extends Scene {
         // Create walls
         this.createRandomWalls();
 
-        // Set up camera to follow player
+        // Set up camera follow
         this.cameras.main.startFollow(this.player.gameObject);
-        this.cameras.main.setZoom(1);
 
-        // Create ammo display
-        this.setupAmmoDisplay();
+        // Create UI elements
+        this.setupUI();
 
         EventBus.emit("current-scene-ready", this);
     }
@@ -87,14 +92,73 @@ export class Game extends Scene {
         this.updateAmmoDisplay();
     }
 
+    private setupUI() {
+        // Setup ammo display first
+        this.setupAmmoDisplay();
+
+        // Then setup minimap
+        this.setupMinimap();
+    }
+
+    private setupMinimap() {
+        const minimapX = this.scale.width - this.MINIMAP_SIZE - 20;
+        const minimapY = 20;
+
+        // Create minimap camera
+        this.minimap = this.cameras.add(
+            minimapX,
+            minimapY,
+            this.MINIMAP_SIZE,
+            this.MINIMAP_SIZE
+        );
+
+        // Configure minimap camera
+        this.minimap
+            .setZoom(this.MINIMAP_SIZE / this.WORLD_SIZE)
+            .setBackgroundColor(0x000000)
+            .setAlpha(0.8)
+            .setBounds(
+                -this.WORLD_SIZE / 2,
+                -this.WORLD_SIZE / 2,
+                this.WORLD_SIZE,
+                this.WORLD_SIZE
+            );
+
+        // Create border for minimap
+        this.minimapBorder = this.add
+            .graphics()
+            .lineStyle(2, 0xffffff)
+            .strokeRect(
+                minimapX,
+                minimapY,
+                this.MINIMAP_SIZE,
+                this.MINIMAP_SIZE
+            )
+            .setScrollFactor(0)
+            .setDepth(100);
+
+        // Create player indicator for minimap
+        const playerIndicator = this.add
+            .graphics()
+            .lineStyle(2, 0x00ff00)
+            .fillStyle(0x00ff00)
+            .fillCircle(0, 0, 6)
+            .setDepth(1);
+
+        // Make the player indicator follow the player in world space
+        playerIndicator.setScrollFactor(1);
+
+        // Make minimap ignore UI elements
+        this.minimap.ignore([this.minimapBorder, this.ammoText]);
+    }
+
     private createRandomWalls() {
-        const numWalls = Phaser.Math.Between(15, 25); // Random number of walls
-        const minSize = 50;
-        const maxSize = 200;
-        const margin = 100; // Margin from center to avoid spawning on player
+        const numWalls = Phaser.Math.Between(50, 60);
+        const minSize = 200;
+        const maxSize = 600;
+        const margin = 400;
 
         for (let i = 0; i < numWalls; i++) {
-            // Generate random position (avoiding center area where player spawns)
             let x, y;
             do {
                 x = Phaser.Math.Between(
@@ -107,12 +171,11 @@ export class Game extends Scene {
                 );
             } while (Math.abs(x) < margin && Math.abs(y) < margin);
 
-            // Random size
             const width = Phaser.Math.Between(minSize, maxSize);
             const height = Phaser.Math.Between(minSize, maxSize);
 
-            // Create wall and add to systems
             const wall = new Wall(this, x, y, width, height);
+            this.walls.push(wall);
             this.systems.forEach((system) => system.addEntity(wall));
         }
     }
@@ -125,7 +188,8 @@ export class Game extends Scene {
                 stroke: "#000000",
                 strokeThickness: 4,
             })
-            .setScrollFactor(0);
+            .setScrollFactor(0)
+            .setDepth(100);
     }
 
     private updateAmmoDisplay() {

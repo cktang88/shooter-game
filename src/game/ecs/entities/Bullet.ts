@@ -17,18 +17,8 @@ export class Bullet extends Entity {
     ) {
         super(scene);
 
-        // Create the bullet line
-        const bulletLength = 20;
-        this.gameObject = scene.add.line(
-            x,
-            y,
-            0,
-            0,
-            Math.cos(angle) * bulletLength,
-            Math.sin(angle) * bulletLength,
-            0xffff00
-        );
-        (this.gameObject as Phaser.GameObjects.Line).setLineWidth(2);
+        // Create the bullet sprite instead of line for better physics
+        this.gameObject = scene.add.rectangle(x, y, 20, 4, 0xffff00);
 
         // Enable physics
         scene.physics.add.existing(this.gameObject);
@@ -45,6 +35,16 @@ export class Bullet extends Entity {
 
         // Set up physics body
         const body = this.gameObject.body as Phaser.Physics.Arcade.Body;
+
+        // Configure physics body
+        body.setAllowGravity(false);
+        body.setFriction(0, 0);
+        body.setBounce(0);
+
+        // Set rotation to match angle
+        this.gameObject.setRotation(angle);
+
+        // Set velocity based on angle
         const velocity = scene.physics.velocityFromAngle(
             Phaser.Math.RadToDeg(angle),
             speed
@@ -61,3 +61,4 @@ export class Bullet extends Entity {
         this.destroy();
     }
 }
+

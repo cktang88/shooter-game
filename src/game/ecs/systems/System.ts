@@ -177,6 +177,7 @@ export class WeaponSystem extends System {
 export class CollisionSystem extends System {
     private collisionGroups: Map<string, Phaser.GameObjects.GameObject[]> =
         new Map();
+    private colliders: Phaser.Physics.Arcade.Collider[] = [];
 
     constructor(scene: Scene) {
         super(scene);
@@ -195,9 +196,14 @@ export class CollisionSystem extends System {
     }
 
     update(time: number, delta: number): void {
+        // Clear old colliders
+        this.colliders.forEach((collider) => collider.destroy());
+        this.colliders = [];
+
         // Clear and update collision groups
         this.setupCollisionGroups();
 
+        // Update groups with current entities
         this.entities.forEach((entity) => {
             const collider = entity.getComponent(ColliderComponent);
             if (!collider) return;
@@ -214,24 +220,44 @@ export class CollisionSystem extends System {
         const players = this.collisionGroups.get("player") || [];
 
         // Bullet-Wall collisions
-        bullets.forEach((bullet) => {
+        if (bullets.length > 0 && walls.length > 0) {
             walls.forEach((wall) => {
-                this.scene.physics.add.collider(bullet, wall, () => {
-                    // Find and destroy the bullet entity
-                    this.entities.forEach((entity) => {
-                        if (entity.gameObject === bullet) {
-                            entity.destroy();
-                        }
-                    });
+                bullets.forEach((bullet) => {
+                    const collider = this.scene.physics.add.overlap(
+                        bullet,
+                        wall,
+                        () => this.handleBulletWallCollision(bullet, wall),
+                        undefined,
+                        this
+                    );
+                    this.colliders.push(collider);
                 });
             });
-        });
+        }
 
         // Player-Wall collisions
-        players.forEach((player) => {
-            walls.forEach((wall) => {
-                this.scene.physics.add.collider(player, wall);
-            });
+        if (players.length > 0 && walls.length > 0) {
+            const collider = this.scene.physics.add.collider(players, walls);
+            this.colliders.push(collider);
+        }
+    }
+
+    private handleBulletWallCollision(
+        bulletObj: Phaser.GameObjects.GameObject,
+        wallObj: Phaser.GameObjects.GameObject
+    ) {
+        console.log(
+            "Bullet-Wall collision detected, positions: ",
+            bulletObj.x,
+            bulletObj.y,
+            wallObj.x,
+            wallObj.y
+        );
+        // Find and destroy the bullet entity
+        this.entities.forEach((entity) => {
+            if (entity.gameObject === bulletObj) {
+                entity.destroy();
+            }
         });
     }
 }
