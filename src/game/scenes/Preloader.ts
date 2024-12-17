@@ -47,12 +47,10 @@ export class Preloader extends Scene {
         const playerCtx = playerCanvas.getContext("2d");
 
         if (playerCtx) {
-            // Draw player (a simple triangle for now)
+            // Draw player (a circle)
             playerCtx.fillStyle = "#00ff00";
             playerCtx.beginPath();
-            playerCtx.moveTo(16, 0); // Top center
-            playerCtx.lineTo(32, 32); // Bottom right
-            playerCtx.lineTo(0, 32); // Bottom left
+            playerCtx.arc(16, 16, 12, 0, Math.PI * 2); // Circle centered at (16,16) with radius 12
             playerCtx.closePath();
             playerCtx.fill();
 

@@ -41,6 +41,8 @@ export class Player extends Entity {
 
         // Set up physics body
         const body = this.gameObject.body as Phaser.Physics.Arcade.Body;
+        body.setCircle(12);
         body.setCollideWorldBounds(true);
     }
 }
+

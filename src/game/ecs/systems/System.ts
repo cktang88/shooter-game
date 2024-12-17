@@ -102,7 +102,11 @@ export class WeaponSystem extends System {
             const weapon = entity.getComponent(WeaponComponent);
             if (!weapon) return;
 
-            if (this.scene.input.activePointer.isDown) {
+            // Only auto-fire for enemies, not the player
+            if (
+                this.scene.input.activePointer.isDown &&
+                entity.hasComponent(PlayerControlledComponent)
+            ) {
                 this.tryShoot(entity, weapon, time);
             }
         });
@@ -110,6 +114,9 @@ export class WeaponSystem extends System {
 
     private handleShoot(): void {
         this.entities.forEach((entity) => {
+            // Only handle manual shooting for player
+            if (!entity.hasComponent(PlayerControlledComponent)) return;
+
             const weapon = entity.getComponent(WeaponComponent);
             if (weapon) {
                 this.tryShoot(entity, weapon, this.scene.time.now);

@@ -1,11 +1,14 @@
 import { Scene } from "phaser";
 import { Player } from "../ecs/entities/Player";
 import { Wall } from "../ecs/entities/Wall";
+import { Enemy } from "../ecs/entities/Enemy";
 import {
     PlayerControlSystem,
     WeaponSystem,
     CollisionSystem,
 } from "../ecs/systems/System";
+import { EnemySystem } from "../ecs/systems/EnemySystem";
+import { BulletCollisionSystem } from "../ecs/systems/BulletCollisionSystem";
 import { WeaponComponent } from "../ecs/components/Component";
 import { EventBus } from "../EventBus";
 
@@ -20,6 +23,8 @@ export class Game extends Scene {
     private readonly CAMERA_ZOOM = 0.8;
     private readonly MINIMAP_SIZE = 200;
     private walls: Wall[] = [];
+    private enemies: Enemy[] = [];
+    private enemySystem: EnemySystem;
 
     constructor() {
         super({
@@ -59,21 +64,28 @@ export class Game extends Scene {
             .setOrigin(0, 0)
             .setDepth(-1);
 
+        // Create player first
+        this.player = new Player(this, 0, 0);
+
+        // Initialize enemy system
+        this.enemySystem = new EnemySystem(this);
+        this.enemySystem.setPlayer(this.player);
+
         // Initialize systems
         this.systems = [
             new PlayerControlSystem(this),
             new WeaponSystem(this),
             new CollisionSystem(this),
+            this.enemySystem,
+            new BulletCollisionSystem(this),
         ];
-
-        // Create player
-        this.player = new Player(this, 0, 0);
 
         // Add player to systems
         this.systems.forEach((system) => system.addEntity(this.player));
 
-        // Create walls
+        // Create walls and enemies
         this.createRandomWalls();
+        this.createEnemies();
 
         // Set up camera follow
         this.cameras.main.startFollow(this.player.gameObject);
@@ -103,6 +115,7 @@ export class Game extends Scene {
     private setupMinimap() {
         const minimapX = this.scale.width - this.MINIMAP_SIZE - 20;
         const minimapY = 20;
+        const DOT_SIZE = 80; // Consistent size for all dots
 
         // Create minimap camera
         this.minimap = this.cameras.add(
@@ -141,24 +154,39 @@ export class Game extends Scene {
         // Make minimap ignore UI elements
         this.minimap.ignore([this.minimapBorder, this.ammoText]);
 
-        // Create a graphics object for the player dot
-        const playerDot = this.add
-            .graphics({ x: 0, y: 0 })
-            .fillStyle(0x00ff00)
-            .fillCircle(0, 0, 80)
-            .setDepth(1);
+        // Create a graphics object for the player and enemy dots
+        const minimapDots = this.add.graphics().setDepth(1);
 
-        // Make main camera ignore the player dot
-        this.cameras.main.ignore(playerDot);
+        // Make main camera ignore the dots
+        this.cameras.main.ignore(minimapDots);
 
-        // Update player dot position in the game loop
+        // Update dots position in the game loop
         this.events.on("update", () => {
+            // Clear previous dots
+            minimapDots.clear();
+
+            // Draw player dot (green)
             if (this.player?.gameObject) {
-                playerDot.setPosition(
-                    this.player.gameObject.x,
-                    this.player.gameObject.y
-                );
+                minimapDots
+                    .fillStyle(0x00ff00)
+                    .fillCircle(
+                        this.player.gameObject.x,
+                        this.player.gameObject.y,
+                        DOT_SIZE
+                    );
             }
+
+            // Draw enemy dots (red)
+            minimapDots.fillStyle(0xff0000);
+            this.enemies.forEach((enemy) => {
+                if (enemy.gameObject) {
+                    minimapDots.fillCircle(
+                        enemy.gameObject.x,
+                        enemy.gameObject.y,
+                        DOT_SIZE
+                    );
+                }
+            });
         });
     }
 
@@ -187,6 +215,29 @@ export class Game extends Scene {
             const wall = new Wall(this, x, y, width, height);
             this.walls.push(wall);
             this.systems.forEach((system) => system.addEntity(wall));
+        }
+    }
+
+    private createEnemies() {
+        const numEnemies = 10;
+        const margin = 600; // Keep enemies away from spawn point
+
+        for (let i = 0; i < numEnemies; i++) {
+            let x, y;
+            do {
+                x = Phaser.Math.Between(
+                    -this.WORLD_SIZE / 2 + margin,
+                    this.WORLD_SIZE / 2 - margin
+                );
+                y = Phaser.Math.Between(
+                    -this.WORLD_SIZE / 2 + margin,
+                    this.WORLD_SIZE / 2 - margin
+                );
+            } while (Math.abs(x) < margin && Math.abs(y) < margin);
+
+            const enemy = new Enemy(this, x, y);
+            this.enemies.push(enemy);
+            this.systems.forEach((system) => system.addEntity(enemy));
         }
     }
 

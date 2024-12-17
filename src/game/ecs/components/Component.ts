@@ -67,3 +67,11 @@ export class PlayerControlledComponent extends Component {
         super(entity);
     }
 }
+
+// Entity type components
+export class EnemyComponent extends Component {
+    constructor(entity: Phaser.GameObjects.GameObject) {
+        super(entity);
+    }
+}
+
