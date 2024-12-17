@@ -9,6 +9,7 @@ import {
     PlayerControlledComponent,
     UIComponent,
     StaminaComponent,
+    MovementStateComponent,
 } from "../components/Component";
 import { WEAPON_TYPES } from "../components/WeaponTypes";
 
@@ -17,8 +18,10 @@ export class Player extends Entity {
         super(scene);
 
         // Create the player sprite
-        this.gameObject = scene.physics.add.sprite(x, y, "player");
-        this.gameObject.setScale(2);
+        this.gameObject = scene.add.rectangle(x, y, 48, 48, 0x00ff00);
+
+        // Enable physics
+        scene.physics.add.existing(this.gameObject);
 
         // Add components
         this.addComponent(new PhysicsBodyComponent(this.gameObject))
@@ -26,6 +29,7 @@ export class Player extends Entity {
                 new ColliderComponent(this.gameObject, "player", [
                     "wall",
                     "enemy",
+                    "bullet",
                 ])
             )
             .addComponent(new HealthComponent(this.gameObject, 100, 100))
@@ -40,8 +44,18 @@ export class Player extends Entity {
                 ])
             )
             .addComponent(new PlayerControlledComponent(this.gameObject))
-            .addComponent(new StaminaComponent(this.gameObject))
-            .addComponent(new UIComponent(this.gameObject));
+            .addComponent(new UIComponent(this.gameObject))
+            .addComponent(
+                new StaminaComponent(
+                    this.gameObject,
+                    100, // maxStamina
+                    100, // currentStamina
+                    50, // staminaDrain
+                    10, // staminaRegen
+                    0 // sprintThreshold
+                )
+            )
+            .addComponent(new MovementStateComponent(this.gameObject));
 
         // Set up physics body
         const body = this.gameObject.body as Phaser.Physics.Arcade.Body;

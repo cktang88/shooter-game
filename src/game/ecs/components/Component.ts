@@ -248,15 +248,26 @@ export class UIComponent extends Component {
 }
 
 export class StaminaComponent extends Component {
-    public currentStamina: number;
-    public readonly maxStamina: number = 100;
-    public readonly staminaDrain: number = 50; // Points per second while sprinting
-    public readonly staminaRegen: number = 10; // Points per second while not sprinting
-    public readonly sprintThreshold: number = 0; // Minimum stamina needed to start sprinting
-
-    constructor(entity: Phaser.GameObjects.GameObject) {
+    constructor(
+        entity: Phaser.GameObjects.GameObject,
+        public maxStamina: number,
+        public currentStamina: number,
+        public staminaDrain: number,
+        public staminaRegen: number,
+        public sprintThreshold: number
+    ) {
         super(entity);
-        this.currentStamina = this.maxStamina;
+    }
+}
+
+export class MovementStateComponent extends Component {
+    public isMoving: boolean = false;
+    public isSprinting: boolean = false;
+
+    getSpreadMultiplier(): number {
+        if (this.isSprinting) return 3.0; // 3x spread when sprinting
+        if (this.isMoving) return 1.5; // 1.5x spread when moving
+        return 0.5; // 0.5x (half) spread when standing still
     }
 }
 

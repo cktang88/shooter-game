@@ -9,6 +9,7 @@ import {
     ColliderComponent,
     StaminaComponent,
     UIComponent,
+    MovementStateComponent,
 } from "../components/Component";
 
 export abstract class System {
@@ -34,7 +35,7 @@ export class PlayerControlSystem extends System {
     private wasdKeys: { [key: string]: Phaser.Input.Keyboard.Key };
     private shiftKey: Phaser.Input.Keyboard.Key;
     private readonly NORMAL_SPEED = 300;
-    private readonly SPRINT_SPEED = 450;
+    private readonly SPRINT_SPEED = 600;
 
     constructor(scene: Scene) {
         super(scene);
@@ -48,7 +49,8 @@ export class PlayerControlSystem extends System {
         return (
             entity.hasComponent(PlayerControlledComponent) &&
             entity.hasComponent(PhysicsBodyComponent) &&
-            entity.hasComponent(StaminaComponent)
+            entity.hasComponent(StaminaComponent) &&
+            entity.hasComponent(MovementStateComponent)
         );
     }
 
@@ -56,8 +58,9 @@ export class PlayerControlSystem extends System {
         this.entities.forEach((entity) => {
             const physicsBody = entity.getComponent(PhysicsBodyComponent);
             const stamina = entity.getComponent(StaminaComponent);
+            const movementState = entity.getComponent(MovementStateComponent);
             const ui = entity.getComponent(UIComponent);
-            if (!physicsBody || !stamina) return;
+            if (!physicsBody || !stamina || !movementState) return;
 
             // Handle stamina regeneration/drain
             const isMoving =
@@ -67,6 +70,10 @@ export class PlayerControlSystem extends System {
                 this.wasdKeys.D.isDown;
             const wantToSprint = this.shiftKey.isDown && isMoving;
             const canSprint = stamina.currentStamina > stamina.sprintThreshold;
+
+            // Update movement state
+            movementState.isMoving = isMoving;
+            movementState.isSprinting = wantToSprint && canSprint;
 
             if (wantToSprint && canSprint) {
                 // Drain stamina while sprinting
@@ -234,11 +241,25 @@ export class WeaponSystem extends System {
                 worldPoint.y
             );
 
+            // Get movement state for spread multiplier
+            let spreadMultiplier = 1.0;
+            if (entity.hasComponent(PlayerControlledComponent)) {
+                const movementState = entity.getComponent(
+                    MovementStateComponent
+                );
+                if (movementState) {
+                    spreadMultiplier = movementState.getSpreadMultiplier();
+                }
+            }
+
             // Create multiple bullets for weapons like shotgun
             for (let i = 0; i < currentWeapon.bulletsPerShot; i++) {
-                // Add spread to the angle
+                // Add spread to the angle, applying the movement state multiplier
                 const spreadAngle =
-                    baseAngle + (Math.random() - 0.5) * currentWeapon.spread;
+                    baseAngle +
+                    (Math.random() - 0.5) *
+                        currentWeapon.spread *
+                        spreadMultiplier;
 
                 // Create bullet with weapon-specific properties
                 new Bullet(
