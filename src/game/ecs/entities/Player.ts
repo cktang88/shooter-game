@@ -8,6 +8,7 @@ import {
     WeaponComponent,
     PlayerControlledComponent,
     UIComponent,
+    StaminaComponent,
 } from "../components/Component";
 import { WEAPON_TYPES } from "../components/WeaponTypes";
 
@@ -39,6 +40,7 @@ export class Player extends Entity {
                 ])
             )
             .addComponent(new PlayerControlledComponent(this.gameObject))
+            .addComponent(new StaminaComponent(this.gameObject))
             .addComponent(new UIComponent(this.gameObject));
 
         // Set up physics body

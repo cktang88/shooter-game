@@ -21,13 +21,9 @@ export class Bullet extends Entity {
         super(scene);
 
         // Create the bullet sprite with the specified color
-        this.gameObject = scene.add.rectangle(
-            x,
-            y,
-            60,
-            4,
-            weaponConfig.bulletColor
-        );
+        this.gameObject = scene.add
+            .rectangle(x, y, 60, 4, weaponConfig.bulletColor)
+            .setAlpha(1);
 
         // Enable physics
         scene.physics.add.existing(this.gameObject);

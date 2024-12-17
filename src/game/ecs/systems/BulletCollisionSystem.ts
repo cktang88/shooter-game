@@ -35,6 +35,18 @@ export class BulletCollisionSystem extends System {
             entity.hasComponent(PlayerControlledComponent)
         );
 
+        // Update bullet opacities based on distance
+        bullets.forEach((bullet) => {
+            const rangeComponent = bullet.getComponent(BulletRangeComponent);
+            if (rangeComponent) {
+                const { opacity } = rangeComponent.calculateDamageAndOpacity(
+                    bullet.gameObject.x,
+                    bullet.gameObject.y
+                );
+                bullet.gameObject.setAlpha(opacity);
+            }
+        });
+
         // Handle bullet collisions with enemies
         bullets.forEach((bullet) => {
             const bulletSource = bullet.getComponent(BulletSourceComponent);
@@ -97,32 +109,11 @@ export class BulletCollisionSystem extends System {
 
         const bulletObj =
             bulletEntity.gameObject as Phaser.GameObjects.GameObject;
-        const distance = Phaser.Math.Distance.Between(
-            rangeComponent.startX,
-            rangeComponent.startY,
+        const { damage } = rangeComponent.calculateDamageAndOpacity(
             bulletObj.x,
             bulletObj.y
         );
-
-        const { range, falloffStart, bulletDamage, minDamage } =
-            rangeComponent.weaponConfig;
-
-        // If within falloffStart distance, do full damage
-        if (distance <= falloffStart) {
-            return bulletDamage;
-        }
-
-        // If beyond maximum range, do minimum damage
-        if (distance >= range) {
-            return minDamage;
-        }
-
-        // Linear interpolation between falloffStart and range
-        const falloffRange = range - falloffStart;
-        const distanceInFalloff = distance - falloffStart;
-        const falloffPercent = distanceInFalloff / falloffRange;
-
-        return bulletDamage - (bulletDamage - minDamage) * falloffPercent;
+        return damage;
     }
 
     private handleBulletHit(bulletEntity: Entity, targetEntity: Entity) {

@@ -130,12 +130,49 @@ export class BulletRangeComponent extends Component {
     ) {
         super(gameObject);
     }
+
+    calculateDamageAndOpacity(
+        currentX: number,
+        currentY: number
+    ): { damage: number; opacity: number } {
+        const distance = Phaser.Math.Distance.Between(
+            this.startX,
+            this.startY,
+            currentX,
+            currentY
+        );
+
+        const { range, falloffStart, bulletDamage, minDamage } =
+            this.weaponConfig;
+
+        // If within falloffStart distance, full damage and opacity
+        if (distance <= falloffStart) {
+            return { damage: bulletDamage, opacity: 1 };
+        }
+
+        // If beyond maximum range, minimum damage and opacity
+        if (distance >= range) {
+            return { damage: minDamage, opacity: 0.3 }; // Minimum opacity of 0.3 to keep bullet visible
+        }
+
+        // Linear interpolation between falloffStart and range
+        const falloffRange = range - falloffStart;
+        const distanceInFalloff = distance - falloffStart;
+        const falloffPercent = distanceInFalloff / falloffRange;
+
+        const damage =
+            bulletDamage - (bulletDamage - minDamage) * falloffPercent;
+        const opacity = 1 - falloffPercent * 0.7; // Scale opacity from 1 to 0.3
+
+        return { damage, opacity };
+    }
 }
 
 // UI components
 export class UIComponent extends Component {
     healthBar: Phaser.GameObjects.Graphics;
     reloadBar: Phaser.GameObjects.Graphics;
+    staminaBar: Phaser.GameObjects.Graphics;
 
     constructor(entity: Phaser.GameObjects.GameObject) {
         super(entity);
@@ -147,6 +184,9 @@ export class UIComponent extends Component {
         // Create reload bar (initially hidden)
         this.reloadBar = scene.add.graphics();
         this.reloadBar.visible = false;
+
+        // Create stamina bar
+        this.staminaBar = scene.add.graphics();
     }
 
     updateHealthBar(health: number, maxHealth: number): void {
@@ -180,14 +220,43 @@ export class UIComponent extends Component {
         }
     }
 
+    updateStaminaBar(stamina: number, maxStamina: number): void {
+        this.staminaBar.clear();
+
+        // Draw background
+        this.staminaBar.fillStyle(0x000000, 0.8);
+        this.staminaBar.fillRect(-25, -50, 50, 6);
+
+        // Draw stamina with color based on level
+        const staminaPercentage = Math.max(0, stamina) / maxStamina;
+        const color = staminaPercentage > 0.3 ? 0x00ffff : 0xff0000; // Cyan when good, red when low
+        this.staminaBar.fillStyle(color, 1);
+        this.staminaBar.fillRect(-25, -50, 50 * staminaPercentage, 6);
+    }
+
     updatePosition(x: number, y: number): void {
         this.healthBar.setPosition(x, y);
         this.reloadBar.setPosition(x, y);
+        this.staminaBar.setPosition(x, y);
     }
 
     destroy(): void {
         this.healthBar.destroy();
         this.reloadBar.destroy();
+        this.staminaBar.destroy();
+    }
+}
+
+export class StaminaComponent extends Component {
+    public currentStamina: number;
+    public readonly maxStamina: number = 100;
+    public readonly staminaDrain: number = 20; // Points per second while sprinting
+    public readonly staminaRegen: number = 10; // Points per second while not sprinting
+    public readonly sprintThreshold: number = 0; // Minimum stamina needed to start sprinting
+
+    constructor(entity: Phaser.GameObjects.GameObject) {
+        super(entity);
+        this.currentStamina = this.maxStamina;
     }
 }
 

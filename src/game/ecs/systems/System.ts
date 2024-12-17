@@ -7,6 +7,8 @@ import {
     WeaponComponent,
     PhysicsBodyComponent,
     ColliderComponent,
+    StaminaComponent,
+    UIComponent,
 } from "../components/Component";
 
 export abstract class System {
@@ -30,25 +32,67 @@ export abstract class System {
 
 export class PlayerControlSystem extends System {
     private wasdKeys: { [key: string]: Phaser.Input.Keyboard.Key };
+    private shiftKey: Phaser.Input.Keyboard.Key;
+    private readonly NORMAL_SPEED = 300;
+    private readonly SPRINT_SPEED = 450;
 
     constructor(scene: Scene) {
         super(scene);
         this.wasdKeys = scene.input.keyboard.addKeys("W,A,S,D,R") as any;
+        this.shiftKey = scene.input.keyboard.addKey(
+            Phaser.Input.Keyboard.KeyCodes.SHIFT
+        );
     }
 
     canProcessEntity(entity: Entity): boolean {
         return (
             entity.hasComponent(PlayerControlledComponent) &&
-            entity.hasComponent(PhysicsBodyComponent)
+            entity.hasComponent(PhysicsBodyComponent) &&
+            entity.hasComponent(StaminaComponent)
         );
     }
 
     update(time: number, delta: number): void {
         this.entities.forEach((entity) => {
             const physicsBody = entity.getComponent(PhysicsBodyComponent);
-            if (!physicsBody) return;
+            const stamina = entity.getComponent(StaminaComponent);
+            const ui = entity.getComponent(UIComponent);
+            if (!physicsBody || !stamina) return;
 
-            const speed = 300;
+            // Handle stamina regeneration/drain
+            const isMoving =
+                this.wasdKeys.W.isDown ||
+                this.wasdKeys.A.isDown ||
+                this.wasdKeys.S.isDown ||
+                this.wasdKeys.D.isDown;
+            const wantToSprint = this.shiftKey.isDown && isMoving;
+            const canSprint = stamina.currentStamina > stamina.sprintThreshold;
+
+            if (wantToSprint && canSprint) {
+                // Drain stamina while sprinting
+                stamina.currentStamina = Math.max(
+                    0,
+                    stamina.currentStamina -
+                        (stamina.staminaDrain * delta) / 1000
+                );
+            } else if (!wantToSprint) {
+                // Regenerate stamina when not sprinting
+                stamina.currentStamina = Math.min(
+                    stamina.maxStamina,
+                    stamina.currentStamina +
+                        (stamina.staminaRegen * delta) / 1000
+                );
+            }
+
+            // Update UI if it exists
+            if (ui) {
+                ui.updateStaminaBar(stamina.currentStamina, stamina.maxStamina);
+            }
+
+            const speed =
+                wantToSprint && canSprint
+                    ? this.SPRINT_SPEED
+                    : this.NORMAL_SPEED;
             const moveX =
                 (this.wasdKeys.D.isDown ? 1 : 0) -
                 (this.wasdKeys.A.isDown ? 1 : 0);
